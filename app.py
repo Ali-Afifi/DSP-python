@@ -90,7 +90,7 @@ def add_wave_handler():
     if (x is not None) and (y is not None):
         sine_wave = {
             "data": [x, y],
-            "name": f"{freq.value}/freq,{amplitude.value}/amp,{phase.value}/phase"
+            "name": f"freq:{freq.value},amp:{amplitude.value},phase:{phase.value}"
         }
         sine_signals.append(sine_wave)
 
