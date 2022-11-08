@@ -7,25 +7,41 @@ import pandas as pd
 from scipy.io import wavfile
 
 from bokeh.io import curdoc
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, Spacer
 from bokeh.models import ColumnDataSource, Slider, Button, Select, CustomJS, FileInput
 from bokeh.plotting import figure
 from bokeh.events import ButtonClick
 
-file_input = FileInput(accept=".csv,.wav", width=300)
+
+file_input = FileInput(accept=".csv,.wav", width=400)
+mode_select = Select(title="modes", options=[], width=400)
+
+input_source = ColumnDataSource(pd.DataFrame())
+
+input_graph = figure(height=400, width=1200,
+                     tools="crosshair,pan,reset,save,wheel_zoom", title="Input Graph")
+
+input_graph.line(x="time", y="amp", source=input_source,
+                 line_width=3, line_alpha=0.6)
 
 
-def get_file_type(attr, old, new):
+def file_input_callback(attr, old, new):
     file_name_array = new.split(".")
     type = file_name_array[len(file_name_array) - 1]
 
     file_input.update()
 
     file_handler(type)
+    plot_input(type)
 
 
-# def print_file_content(value):
-#     print(value.decode("utf-8"))
+def file_handler(type):
+
+    decoded_file_value = base64.b64decode(file_input.value)
+
+    print(type)
+
+    save_file(decoded_file_value, type)
 
 
 def save_file(value, type):
@@ -45,31 +61,34 @@ def save_file(value, type):
         csv_file.close()
 
 
-def file_handler(type):
+def plot_input(type):
+    if type == "wav":
+        fs, data = wavfile.read("temp.wav")
+        n_samples = len(data)
+        time = np.linspace(0, n_samples/fs, num=n_samples)
+        df = pd.DataFrame(data={
+            "time": time,
+            "amp": data
+        })
 
-    decoded_file_value = base64.b64decode(file_input.value)
-
-    print(type)
-
-    save_file(decoded_file_value, type)
-
-
-file_input.on_change("filename", get_file_type)
-
-
-# x = np.linspace(0, 5, 100000)
-# y = np.sin(2*np.pi*x)
-
-# source1 = ColumnDataSource(data=dict(x=x, y=y))
-# source2 = ColumnDataSource(data={"x": [], "y": []})
+        input_source.data = df
+    else:
+        csv_df = pd.read_csv("temp.csv", index_col=False, header=0)
+        csv_df.columns = ["time", "amp"]
+        input_source.data = csv_df
 
 
-# # set up plot
-# plot1 = figure(height=400, width=1200,
-#                tools="crosshair,pan,reset,save,wheel_zoom",
-#                x_range=[0, 5], y_range=[-10.0, 10.0])
+print(file_input.filename)
 
-# plot1.line('x', 'y', source=source1, line_width=3, line_alpha=0.6)
+file_input.on_change("filename", file_input_callback)
+
+
+######
+
+
+# set up plot
+
+# input_graph.visible = False
 
 # # result plot
 # plot2 = figure(height=400, width=1200,
@@ -176,12 +195,10 @@ file_input.on_change("filename", get_file_type)
 
 # layout
 
-inputs = column(file_input)
+inputs = column(file_input, mode_select)
 
-# inputs = column(amplitude, phase, freq, add_wave_btn, deletion)
+graphs = column(input_graph)
 
-# generator = column(row(plot1, inputs), column(plot2, download_btn))
-
-
-curdoc().add_root(inputs)
+curdoc().add_root(row(Spacer(width=100), graphs, inputs,
+                      Spacer(width=100), sizing_mode='stretch_both'))
 curdoc().title = "Equalizer"
