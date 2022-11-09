@@ -7,14 +7,24 @@ import pandas as pd
 from scipy.io import wavfile
 
 from bokeh.io import curdoc
-from bokeh.layouts import column, row, Spacer
-from bokeh.models import ColumnDataSource, Slider, Button, Select, CustomJS, FileInput
+from bokeh.layouts import column, row, Spacer, layout
+from bokeh.models import ColumnDataSource, Slider, Button, Select, CustomJS, FileInput, Div
 from bokeh.plotting import figure
 from bokeh.events import ButtonClick
 
 
-file_input = FileInput(accept=".csv,.wav", width=450)
-mode_select = Select(title="modes", options=[], width=450)
+file_input = FileInput(accept=".csv,.wav,.txt", width=500)
+
+mode_select = Select(title="modes", options=[], width=500)
+
+info_msg = Div(text="""
+               <h1 style="font-size: 60px; color: #242020;">
+                    Upload a file and start mixing <br> &lpar;only *.csv and *.wav files&rpar;
+                </h1>
+                """,
+               width=1200, height=400)
+
+# audio_div = Div(text="""<audio controls><audio>""")
 
 input_source = ColumnDataSource(pd.DataFrame())
 
@@ -23,6 +33,8 @@ input_graph = figure(height=400, width=1200,
 
 input_graph.line(x="time", y="amp", source=input_source,
                  line_width=3, line_alpha=0.6)
+
+input_graph.visible = False
 
 
 def file_input_callback(attr, old, new):
@@ -74,11 +86,20 @@ def plot_input(type):
         })
 
         input_source.data = df
+
+        info_msg.visible = False
+        input_graph.visible = True
+
     elif type == "csv":
         csv_df = pd.read_csv("temp.csv", index_col=False, header=0)
         csv_df.columns = ["time", "amp"]
         input_source.data = csv_df
+
+        info_msg.visible = False
+        input_graph.visible = True
     else:
+        info_msg.visible = True
+        input_graph.visible = False
         return
 
 # print(file_input.filename)
@@ -200,10 +221,11 @@ file_input.on_change("filename", file_input_callback)
 # layout
 
 inputs = column(file_input, mode_select)
+graphs = column(info_msg, input_graph)
 
-graphs = column(input_graph)
 
-curdoc().add_root(row(Spacer(width=100), graphs, inputs,
-                      Spacer(width=100), sizing_mode='stretch_both'))
+
+curdoc().add_root(row(Spacer(width=90), graphs, inputs,
+                 Spacer(width=90), sizing_mode='stretch_both'))
 
 curdoc().title = "Equalizer"
