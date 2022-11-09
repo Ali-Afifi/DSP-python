@@ -13,8 +13,8 @@ from bokeh.plotting import figure
 from bokeh.events import ButtonClick
 
 
-file_input = FileInput(accept=".csv,.wav", width=400)
-mode_select = Select(title="modes", options=[], width=400)
+file_input = FileInput(accept=".csv,.wav", width=450)
+mode_select = Select(title="modes", options=[], width=450)
 
 input_source = ColumnDataSource(pd.DataFrame())
 
@@ -53,12 +53,14 @@ def save_file(value, type):
         wav_file = open("temp.wav", "wb")
         wav_file.write(value)
         wav_file.close()
-    else:
+    elif type == "csv":
         if os.path.exists("temp.csv"):
             os.remove("temp.csv")
         csv_file = open("temp.csv", "w")
         csv_file.write(value.decode("utf-8"))
         csv_file.close()
+    else:
+        print("file type is not compatible")
 
 
 def plot_input(type):
@@ -72,13 +74,15 @@ def plot_input(type):
         })
 
         input_source.data = df
-    else:
+    elif type == "csv":
         csv_df = pd.read_csv("temp.csv", index_col=False, header=0)
         csv_df.columns = ["time", "amp"]
         input_source.data = csv_df
+    else:
+        print("file type is not compatible")
+        
 
-
-print(file_input.filename)
+# print(file_input.filename)
 
 file_input.on_change("filename", file_input_callback)
 
@@ -201,4 +205,5 @@ graphs = column(input_graph)
 
 curdoc().add_root(row(Spacer(width=100), graphs, inputs,
                       Spacer(width=100), sizing_mode='stretch_both'))
+
 curdoc().title = "Equalizer"

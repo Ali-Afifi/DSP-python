@@ -3,3 +3,4 @@ scipy
 matplotlib
 pandas
 bokeh==3.0.1
+soundfile
