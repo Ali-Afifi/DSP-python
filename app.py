@@ -79,10 +79,10 @@ def plot_input(type):
         csv_df.columns = ["time", "amp"]
         input_source.data = csv_df
     else:
-        print("file type is not compatible")
-        
+        return
 
 # print(file_input.filename)
+
 
 file_input.on_change("filename", file_input_callback)
 
